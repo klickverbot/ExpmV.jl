@@ -89,7 +89,7 @@ function expmv(t, A, b; M::Array{Float64, 2} = Array(Float64, 0, 0), prec = "dou
     b1 = copy(b)
     b2 = similar(b)
     @inbounds for i = 1:s
-        c1 = norm_inf(b1);
+        c1 = norm_inf(b1)
         for k = 1:m
             A_mul_B!(b2, A, b1)
             @simd for l in 1:n
@@ -112,13 +112,9 @@ function expmv(t, A, b; M::Array{Float64, 2} = Array(Float64, 0, 0), prec = "dou
             end
         end
         if shift
-            @simd for l in 1:n
-                f[l] = f[l] * eta
-            end
+            scale!(f, eta)
         end
-        @simd for l in 1:n
-            b1[l] = f[l]
-        end
+        copy!(b1, f)
     end
     
     # if prnt
