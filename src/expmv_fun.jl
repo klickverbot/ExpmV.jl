@@ -85,17 +85,24 @@ function expmv(t, A, b; M::Array{Float64, 2} = Array(Float64, 0, 0), prec = "dou
         eta = exp(t * mu / s)
     end
 
+    a = convert(Base.SparseMatrix.CHOLMOD.Sparse, A')
+
     f = copy(b)
+
     b1 = copy(b)
+    cb1 = [Base.SparseMatrix.CHOLMOD.C_Dense{Complex128}(size(b1, 1), size(b1, 2), length(b1), size(b1, 1), pointer(b1), C_NULL, Base.SparseMatrix.CHOLMOD.COMPLEX, Base.SparseMatrix.CHOLMOD.DOUBLE)]
+    pb1 = Base.SparseMatrix.CHOLMOD.Dense(pointer(cb1))
+
     b2 = similar(b)
+    cb2 = [Base.SparseMatrix.CHOLMOD.C_Dense{Complex128}(size(b2, 1), size(b2, 2), length(b2), size(b2, 1), pointer(b2), C_NULL, Base.SparseMatrix.CHOLMOD.COMPLEX, Base.SparseMatrix.CHOLMOD.DOUBLE)]
+    pb2 = Base.SparseMatrix.CHOLMOD.Dense(pointer(cb2))
+
     @inbounds for i = 1:s
         c1 = norm_inf(b1)
         for k = 1:m
-            A_mul_B!(b2, A, b1)
-            @simd for l in 1:n
-                b2[l] *= (t / (s * k))
-            end
+            Base.SparseMatrix.CHOLMOD.sdmult!(a, true, t / (s * k), 0, pb1, pb2)
             (b1, b2) = (b2, b1)
+            (pb1, pb2) = (pb2, pb1)
 
             @simd for l in 1:n
                 f[l] = f[l] + b1[l]
